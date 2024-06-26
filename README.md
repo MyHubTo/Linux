@@ -3,8 +3,8 @@
 
 # 2、git 账户配置
 ```
-git config --global user.email "598184817@qq.com"
-git config --global user.name  "zhaoc"
+git config --global user.email "xxx.com"
+git config --global user.name  "xxx"
 
 # git config命令的–global参数，用了这个参数，表示你这台机器上所有的Git仓库都会使用这个配置，当然也可以对某个仓库指定不同的用户名和Email地址。
 
@@ -37,4 +37,7 @@ $ git config --global user.name "freedom"
 # 设置全局编辑器为vim
 git config --global core.editor "vim"
 ```
-
+# 3、配置ssh
+```
+ssh-keygen -t rsa -C "www.xxx.com"
+```

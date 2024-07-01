@@ -41,3 +41,8 @@ git config --global core.editor "vim"
 ```
 ssh-keygen -t rsa -C "www.xxx.com"
 ```
+# 4、增加git commit 模板
+```
+git config --global commit.template /home/xxx/commit.template
+
+```

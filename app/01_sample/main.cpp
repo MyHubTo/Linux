@@ -29,6 +29,7 @@ static int mac_addr_set(char *line)
   memcpy(ETH_MAC, mac, 6);
   snprintf(eth_mac, sizeof(eth_mac),"%02x:%02x:%02x:%02x:%02x:%02x",ETH_MAC[0], ETH_MAC[1], ETH_MAC[2],ETH_MAC[3], ETH_MAC[4], ETH_MAC[5]);
   fmt::print("eth {}\n",eth_mac);
+  return 0;
 }
 
 int main()

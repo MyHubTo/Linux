@@ -5,12 +5,12 @@ obj-m += hello.o
 build: kernel_modules
 
 # make 编译
-kernel_modules: 
+kernel_modules:
 	make -C /lib/modules/${KVERS}/build M=${CURDIR} modules
 
 # make clean 清除
 clean:
-	make -C /lib/modules/${KVERS}/build M=${CURDIR} clean 
+	make -C /lib/modules/${KVERS}/build M=${CURDIR} clean
 
 # make print-info 打印调试信息
 print-info:

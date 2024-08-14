@@ -1,0 +1,10 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.Demo" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Customize your light theme here. -->
+        <item name="android:titleTextColor">#00FFFF</item>
+        <item name="android:textColorPrimaryInverse"/>
+    </style>
+
+    <style name="Theme.Demo" parent="Base.Theme.Demo" />
+</resources>

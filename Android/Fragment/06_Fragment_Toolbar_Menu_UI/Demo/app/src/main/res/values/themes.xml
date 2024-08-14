@@ -1,0 +1,18 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.Demo" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Customize your light theme here. -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="android:textColorPrimary">@color/black</item>
+    </style>
+
+    <!--修改字体和图标的颜色 Widget.Material3.Toolbar-->
+    <style name="ToolBarTheme">
+        <item name="actionMenuTextColor">@color/black</item>
+        <item name="colorControlNormal">@color/black</item>
+        <item name="textAllCaps">false</item>
+    </style>
+
+    <style name="Theme.Demo" parent="Base.Theme.Demo" />
+</resources>

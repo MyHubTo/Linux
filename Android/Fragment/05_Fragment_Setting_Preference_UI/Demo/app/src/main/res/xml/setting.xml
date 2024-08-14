@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <PreferenceCategory app:title="Account">
+        <SwitchPreferenceCompat
+            app:key="notifications"
+            app:icon="@drawable/baseline_person_24"
+            app:title="Enable message notifications" />
+        <Preference
+            app:key="feedback"
+            app:icon="@drawable/baseline_manage_accounts_24"
+            app:summary="Report technical issues or suggest new features"
+            app:title="Send feedback" />
+    </PreferenceCategory>
+    <PreferenceCategory app:title="Setting">
+    <SwitchPreference
+        app:key="SwitchPreference"
+        app:icon="@drawable/baseline_home_24"
+        app:title="SwitchPreference" />
+    <CheckBoxPreference
+        android:key="CheckBoxPreference"
+        app:icon="@drawable/baseline_settings_24"
+        app:title="CheckBoxPreference" />
+    </PreferenceCategory>
+    <PreferenceCategory app:title="Others">
+    <SwitchPreferenceCompat
+        app:key="maxFlightRadiusEnabled"
+        app:selectable="true"
+        app:summary="Set the maximum flyable radius distance of the drone"
+        app:summaryOn="It is recommended to turn off this feature, otherwise it will limit the maximum flight distance of the device"
+        app:title="Limit distance enable" />
+    <EditTextPreference
+        app:dependency="maxFlightRadiusEnabled"
+        app:key="maxFlightRadius"
+        app:summary="2000"
+        app:title="Limit distance (m)"
+        app:useSimpleSummaryProvider="true" />
+    </PreferenceCategory>
+</PreferenceScreen>

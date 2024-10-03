@@ -23,9 +23,12 @@ public class MainActivity extends AppCompatActivity {
         mHome=findViewById(R.id.Home);
         mSetting=findViewById(R.id.Setting);
 
+        //初始化默认的Fragment
         mFragment=new HomeFragment();
+        //将HomeFragment添加到布局中
         getSupportFragmentManager().beginTransaction().add(R.id.container,mFragment,"HomeFragment").commit();
 
+        //设置RadioGroup Listener
         mGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(RadioGroup radioGroup, int i) {
@@ -43,13 +46,17 @@ public class MainActivity extends AppCompatActivity {
 
     private void switchFragment(Fragment fragment){
         Log.d(TAG,"switchFragment\n");
+        //判断当前显示的Fragment是不是切换的Fragment
         if(mFragment!=fragment){
+        //判断切换的Fragment是否已经添加过
             if(!fragment.isAdded()){
                 Log.d(TAG,"Fragment is not isAdded\n");
+                //如果没有,则先把当前的Fragment隐藏,把切换的Fragment添加上
                 getSupportFragmentManager().beginTransaction().hide(mFragment)
                         .add(R.id.container,fragment).commit();
             }else{
                 Log.d(TAG,"Fragment is isAdded\n");
+                //如果已经添加过,则先把当前的Fragment隐藏,把切换的Fragment显示出来
                 getSupportFragmentManager().beginTransaction()
                         .hide(mFragment).show(fragment).commit();
             }

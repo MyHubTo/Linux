@@ -273,14 +273,14 @@ timing_t VideoTimingCaculator::lookupVicTiming(uint32_t horiz_pixels,uint32_t ve
                         // double peak_bw_dsc = pclock * 8; // Minium BW required, when compressed to 8bpp.
                         double line_bw = peak_bw * vic_timing.h_active / vic_timing.h_total;
                         double active_bw = vfreq * bpc * vic_timing.v_active * vic_timing.h_active  * color_fmt_multiplier;
-                        // double vblank_duration = vic_timing.v_blank * hperiod;
-
-                        vic_timing.h_period     =std::round(hperiod * 1000000000) / 1000;
-                        vic_timing.v_period     =std::round(vperiod * 1000000) / 1000;
-                        vic_timing.peak_bw      =std::round(peak_bw / 1000000);
-                        vic_timing.line_bw      =std::round(line_bw / 1000000);
-                        vic_timing.active_bw    =std::round(active_bw / 1000000);
-                        vic_timing.pix_clock    =std::round(pclock / 1000)/1000;
+                        double vblank_duration = vic_timing.v_blank * hperiod;
+                        vic_timing.vblank_duration  = std::round(vblank_duration * 1000000);
+                        vic_timing.h_period         = std::round(hperiod * 1000000000) / 1000;
+                        vic_timing.v_period         = std::round(vperiod * 1000000) / 1000;
+                        vic_timing.peak_bw          = std::round(peak_bw / 1000000);
+                        vic_timing.line_bw          = std::round(line_bw / 1000000);
+                        vic_timing.active_bw        = std::round(active_bw / 1000000);
+                        vic_timing.pix_clock        = std::round(pclock / 1000)/1000;
                         NLOGI("find cea timing vic is {}\n",cJSON_GetObjectItem(item,"vic")->valueint);
                     }
                 }

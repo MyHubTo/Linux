@@ -1,13 +1,33 @@
 #include "VideoTimingCalculator.h"
 VideoTimingCaculator::VideoTimingCaculator(){
+    addConfig();
 }
 
 VideoTimingCaculator::~VideoTimingCaculator(){
-
+    cJSON_Delete(m_vic_timing);
 }
 
-void VideoTimingCaculator::calculateCvt(int horiz_pixels, int vert_pixels,int refresh_rate,
-                                        int bpc,double color_fmt_multiplier,std::string reduced_blanking,
+void VideoTimingCaculator::addConfig(){
+    fstream file(DEFAULT_CONFIG_FILE,ios::in);
+    std::string content={};
+    if (!file.is_open()){
+        NLOGE("{} error\n",__FUNCTION__);
+        return;
+    }
+    char buffer[MAX_BUFFER_SIZE];
+    while (file.getline(buffer, MAX_BUFFER_SIZE)) {
+        content += std::string(buffer);
+    }
+    file.close();
+    m_vic_timing = cJSON_Parse(content.c_str());
+    if (!m_vic_timing) {
+        NLOGE("{}\n", "Parse error");
+    }
+    return;
+}
+
+void VideoTimingCaculator::calculateCvt(uint32_t horiz_pixels, uint32_t vert_pixels,double refresh_rate,
+                                        uint32_t bpc,double color_fmt_multiplier,std::string reduced_blanking,
                                         bool margins, bool interlaced, bool video_optimized){
     std::string H_POL="?";
     std::string V_POL="?";
@@ -43,8 +63,17 @@ void VideoTimingCaculator::calculateCvt(int horiz_pixels, int vert_pixels,int re
         REFRESH_MULTIPLIER  = video_optimized ? 1000/1001 : 1;
         H_POL               = "+";
         V_POL               = "-";
+    }else if (reduced_blanking == "cea"){
+        timing_t cea_timing;
+        cea_timing=lookupVicTiming(horiz_pixels,vert_pixels,refresh_rate,bpc,color_fmt_multiplier,interlaced);
+        if((cea_timing.pix_clock>0)&&(cea_timing.h_active>0)&&(cea_timing.v_active>0)){
+            m_timing=cea_timing;
+            return;
+        }else{
+            NLOGW("{} cea timing not found\n",__FUNCTION__);
+            return;
+        }
     }
-
         // Input parameters
         H_PIXELS            = horiz_pixels;
         V_LINES             = vert_pixels;
@@ -199,32 +228,96 @@ timing_t VideoTimingCaculator::getCvtTiming(){
     return m_timing;
 }
 
+timing_t VideoTimingCaculator::lookupVicTiming(uint32_t horiz_pixels,uint32_t vert_pixels,double refresh_rate,uint32_t bpc,double color_fmt_multiplier,bool interlaced){
+    timing_t vic_timing={};
+    if(m_vic_timing){
+        NLOGI("{} m_vic_timing case\n",__FUNCTION__);
+        if(cJSON_IsArray(m_vic_timing)){
+            int array_size = cJSON_GetArraySize(m_vic_timing);
+            for(int i=0; i< array_size; i++){
+                cJSON *item = cJSON_GetArrayItem(m_vic_timing,i);
+                if(cJSON_IsObject(item)){
+                    uint32_t h_pix = cJSON_GetObjectItem(item,"h_active")->valueint;
+                    uint32_t v_pix = cJSON_GetObjectItem(item,"v_active")->valueint;
+                    double   rate  = cJSON_GetObjectItem(item,"v_freq")->valuedouble;
+                    if((h_pix==horiz_pixels) && (v_pix==vert_pixels) && (std::round(refresh_rate) == std::round(rate)) &&
+                    ((interlaced && (std::string(cJSON_GetObjectItem(item,"scan")->valuestring)=="Int"))
+                    ||((!interlaced ) && (std::string(cJSON_GetObjectItem(item,"scan")->valuestring)=="Prog")))){
+                        vic_timing.type="cea";
+                        vic_timing.h_active         = h_pix;
+                        vic_timing.v_active         = v_pix;
+                        vic_timing.v_freq           = rate;
+
+                        vic_timing.h_total          = cJSON_GetObjectItem(item,"h_total")->valueint;
+                        vic_timing.h_blank          = cJSON_GetObjectItem(item,"h_blank")->valueint;
+                        vic_timing.h_front_porch    = cJSON_GetObjectItem(item,"h_front")->valueint;
+                        vic_timing.h_sync           = cJSON_GetObjectItem(item,"h_sync")->valueint;
+                        vic_timing.h_back_porch     = cJSON_GetObjectItem(item,"h_back")->valueint;
+                        vic_timing.h_freq           = cJSON_GetObjectItem(item,"h_freq")->valuedouble;
+                        vic_timing.h_sync_polarity  = (std::string(cJSON_GetObjectItem(item,"h_pol")->string)=="N")?0:1;
+
+                        vic_timing.v_total          = cJSON_GetObjectItem(item,"v_total")->valueint;
+                        vic_timing.v_blank          = cJSON_GetObjectItem(item,"v_blank")->valueint;
+                        vic_timing.v_front_porch    = cJSON_GetObjectItem(item,"v_front")->valueint;
+                        vic_timing.v_sync           = cJSON_GetObjectItem(item,"v_sync")->valueint;
+                        vic_timing.v_back_porch     = cJSON_GetObjectItem(item,"v_back")->valueint;
+                        vic_timing.v_freq           = cJSON_GetObjectItem(item,"v_freq")->valuedouble;
+                        vic_timing.v_sync_polarity  = (std::string(cJSON_GetObjectItem(item,"v_pol")->string)=="N")?0:1;
+
+                        double pclock               = cJSON_GetObjectItem(item,"pix_clock")->valuedouble * 1000000;
+                        double hfreq = pclock / vic_timing.h_total;
+                        double vfreq = pclock / (vic_timing.h_total * vic_timing.v_total);
+                        double hperiod = 1 / hfreq;
+                        double vperiod = 1 / vfreq;
+                        double peak_bw = pclock * bpc * color_fmt_multiplier;
+                        // double peak_bw_dsc = pclock * 8; // Minium BW required, when compressed to 8bpp.
+                        double line_bw = peak_bw * vic_timing.h_active / vic_timing.h_total;
+                        double active_bw = vfreq * bpc * vic_timing.v_active * vic_timing.h_active  * color_fmt_multiplier;
+                        // double vblank_duration = vic_timing.v_blank * hperiod;
+
+                        vic_timing.h_period     =std::round(hperiod * 1000000000) / 1000;
+                        vic_timing.v_period     =std::round(vperiod * 1000000) / 1000;
+                        vic_timing.peak_bw      =std::round(peak_bw / 1000000);
+                        vic_timing.line_bw      =std::round(line_bw / 1000000);
+                        vic_timing.active_bw    =std::round(active_bw / 1000000);
+                        vic_timing.pix_clock    =std::round(pclock / 1000)/1000;
+                        NLOGI("find cea timing vic is {}\n",cJSON_GetObjectItem(item,"vic")->valueint);
+                    }
+                }
+            }
+        }
+    }else{
+        NLOGE("{} m_vic_timing is null\n",__FUNCTION__);
+    }
+    return vic_timing;
+}
+
 void VideoTimingCaculator::dump(){
 #ifdef FMT_OUTPUT
-    fmt::print("{}_pix_clock        {} MHz\n",      m_timing.type, m_timing.pix_clock);
-    fmt::print("{}_h_total          {} Pixels\n",   m_timing.type, m_timing.h_total);
-    fmt::print("{}_h_active         {} Pixels\n",   m_timing.type, m_timing.h_active);
-    fmt::print("{}_h_blank          {} Pixels\n",   m_timing.type, m_timing.h_blank);
-    fmt::print("{}_h_front_porch    {} Pixels\n",   m_timing.type, m_timing.h_front_porch);
-    fmt::print("{}_h_sync           {} Pixels\n",   m_timing.type, m_timing.h_sync);
-    fmt::print("{}_h_back_porch     {} Pixels\n",   m_timing.type, m_timing.h_back_porch);
-    fmt::print("{}_h_sync_polarity  {} \n",         m_timing.type, m_timing.h_sync_polarity);
-    fmt::print("{}_h_freq           {} KHz\n",      m_timing.type, m_timing.h_freq);
-    fmt::print("{}_h_period         {} us\n",       m_timing.type, m_timing.h_period);
+    NLOGI("{}_pix_clock        {} MHz\n",      m_timing.type, m_timing.pix_clock);
+    NLOGI("{}_h_total          {} Pixels\n",   m_timing.type, m_timing.h_total);
+    NLOGI("{}_h_active         {} Pixels\n",   m_timing.type, m_timing.h_active);
+    NLOGI("{}_h_blank          {} Pixels\n",   m_timing.type, m_timing.h_blank);
+    NLOGI("{}_h_front_porch    {} Pixels\n",   m_timing.type, m_timing.h_front_porch);
+    NLOGI("{}_h_sync           {} Pixels\n",   m_timing.type, m_timing.h_sync);
+    NLOGI("{}_h_back_porch     {} Pixels\n",   m_timing.type, m_timing.h_back_porch);
+    NLOGI("{}_h_sync_polarity  {} \n",         m_timing.type, m_timing.h_sync_polarity);
+    NLOGI("{}_h_freq           {} KHz\n",      m_timing.type, m_timing.h_freq);
+    NLOGI("{}_h_period         {} us\n",       m_timing.type, m_timing.h_period);
 
-    fmt::print("{}_v_total          {} Pixels\n",   m_timing.type, m_timing.v_total);
-    fmt::print("{}_v_active         {} Pixels\n",   m_timing.type, m_timing.v_active);
-    fmt::print("{}_v_blank          {} Pixels\n",   m_timing.type, m_timing.v_blank);
-    fmt::print("{}_vblank_duration  {} us\n",       m_timing.type, m_timing.vblank_duration);
-    fmt::print("{}_v_front_porch    {} Pixels\n",   m_timing.type, m_timing.v_front_porch);
-    fmt::print("{}_v_sync           {} Pixels\n",   m_timing.type, m_timing.v_sync);
-    fmt::print("{}_v_back_porch     {} Pixels\n",   m_timing.type, m_timing.v_back_porch);
-    fmt::print("{}_v_sync_polarity  {} \n",         m_timing.type, m_timing.v_sync_polarity);
-    fmt::print("{}_v_freq           {} Hz\n",       m_timing.type, m_timing.v_freq);
-    fmt::print("{}_v_period         {} us\n",       m_timing.type, m_timing.v_period);
-    fmt::print("{}_peak_bw          {} Mbit/s\n",   m_timing.type, m_timing.peak_bw);
-    fmt::print("{}_line_bw          {} Mbit/s\n",   m_timing.type, m_timing.line_bw);
-    fmt::print("{}_active_bw        {} Mbit/s\n",   m_timing.type, m_timing.active_bw);
-    fmt::print("\n");
+    NLOGI("{}_v_total          {} Lines\n",   m_timing.type, m_timing.v_total);
+    NLOGI("{}_v_active         {} Lines\n",   m_timing.type, m_timing.v_active);
+    NLOGI("{}_v_blank          {} Lines\n",   m_timing.type, m_timing.v_blank);
+    NLOGI("{}_vblank_duration  {} us\n",       m_timing.type, m_timing.vblank_duration);
+    NLOGI("{}_v_front_porch    {} Lines\n",   m_timing.type, m_timing.v_front_porch);
+    NLOGI("{}_v_sync           {} Lines\n",   m_timing.type, m_timing.v_sync);
+    NLOGI("{}_v_back_porch     {} Lines\n",   m_timing.type, m_timing.v_back_porch);
+    NLOGI("{}_v_sync_polarity  {} \n",         m_timing.type, m_timing.v_sync_polarity);
+    NLOGI("{}_v_freq           {} Hz\n",       m_timing.type, m_timing.v_freq);
+    NLOGI("{}_v_period         {} ms\n",       m_timing.type, m_timing.v_period);
+    NLOGI("{}_peak_bw          {} Mbit/s\n",   m_timing.type, m_timing.peak_bw);
+    NLOGI("{}_line_bw          {} Mbit/s\n",   m_timing.type, m_timing.line_bw);
+    NLOGI("{}_active_bw        {} Mbit/s\n",   m_timing.type, m_timing.active_bw);
 #endif
+    return;
 }

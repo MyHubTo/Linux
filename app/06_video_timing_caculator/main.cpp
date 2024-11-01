@@ -4,12 +4,12 @@
 #ifdef FMT_OUTPUT
 #include <fmt/core.h>
 #include <fmt/color.h>
+using namespace fmt;
 #endif
 using namespace std;
-using namespace fmt;
 void Usage(){
-    std::cout<<"Usage:./demo 640 480 60 8 3 cvt_rb 0 0 0 "\
-                << "\t h_pixs v_pixs rate(Hz) bpc(5/6/8/10/12/16) color_fmt_multiplier(3/2/1.5)" \
+    std::cout<<"Usage:./demo 640 480 60 8 3 cvt_rb 0 0 0 \n"\
+                << "\t h_pixs v_pixs rate(Hz) bpc(5/6/8/10/12/16) color_fmt_multiplier(3/2/1.5) \n" \
                 << "\t reduced_blanking(cvt/cvt_rb/cvt_rb2) margins(0/1) interlaced(0/1)  video_optimized(0/1)"<<std::endl;
 }
 int main(int argc ,char *argv[])
@@ -24,7 +24,7 @@ int main(int argc ,char *argv[])
     bool margins;
     bool interlaced;
     bool video_optimized;
-    std::vector<std::string> standards={"cvt","cvt_rb","cvt_rb2"};
+    std::vector<std::string> standards={"cvt","cvt_rb","cvt_rb2","cea"};
     if(argc==3){
         h_pixs                  = atoi(argv[1]);
         v_pixs                  = atoi(argv[2]);

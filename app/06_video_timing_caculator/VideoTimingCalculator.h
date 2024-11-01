@@ -3,14 +3,18 @@
 #include <iostream>
 #include <string>
 #include <math.h>
-#define FMT_OUTPUT //!output
+#include <fstream>
+#include <cjson/cJSON.h>
+#include "VLog.h"
 #ifdef  FMT_OUTPUT
 #include <fmt/core.h>
 #include <fmt/color.h>
 #endif
-
 using namespace std;
-
+#define     MAX_BUFFER_SIZE         4096
+#define     DEFAULT_CONFIG_FILE     "/root/Linux/app/06_video_timing_caculator/config/vic_timings.json"
+#define     STRINGIFY(x)            #x
+#define     TOSTRING(x)             STRINGIFY(x)
 struct timing_t{
     std::string type;
     double      pix_clock;          //MHz
@@ -57,10 +61,11 @@ struct cea_timing_t{
 class VideoTimingCaculator{
 public:
     VideoTimingCaculator();
-    void calculateCvt(  int horiz_pixels,
-                        int vert_pixels,
-                        int refresh_rate=60,
-                        int bpc=8,  //Bits per Component.(eg:5/6/8/10/12/16)
+    void addConfig();
+    void calculateCvt(  uint32_t horiz_pixels,
+                        uint32_t vert_pixels,
+                        double refresh_rate=60.0,
+                        uint32_t bpc=8,  //Bits per Component.(eg:5/6/8/10/12/16)
                         double color_fmt_multiplier=3,// Color Format.(eg:rgb444/yuv444:3,yuv422:2,yuv420:1.5,other:0)
                         std::string reduced_blanking="cvt_rb",
                         bool margins=false,
@@ -69,10 +74,12 @@ public:
 
     timing_t getCvtTiming();
     std::string getModeLine();
+    timing_t lookupVicTiming(uint32_t horiz_pixels,uint32_t vert_pixels,double refresh_rate,uint32_t bpc,double color_fmt_multiplier,bool interlaced);
     void dump();
     ~VideoTimingCaculator();
 private:
     timing_t m_timing;
+    cJSON*   m_vic_timing;
 
     double CLOCK_STEP;                          //Pixel clock resolution
     double H_SYNC_PER                   = 0.08; //Percentage of the horizontal total period that defines horizontal sync width

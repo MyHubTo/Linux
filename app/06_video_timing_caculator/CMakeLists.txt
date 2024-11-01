@@ -50,6 +50,14 @@ endif()
 
 # find fmt
 find_package(fmt)
+
+find_package(cJSON REQUIRED)
+if(NOT cJSON_FOUND)
+   message("cJSON not found\n")
+elseif(cJSON_FOUND)
+   message("cJSON found successful\n")
+endif()
+
 #-------------------------------------------------------------------------#
 
 # 设置包含路径
@@ -59,6 +67,7 @@ ${PROJECT_SOURCE_DIR}
 ${PROJECT_SOURCE_DIR}/include
 # ${OpenCV_INCLUDE_DIR}
 ${fmt_INCLUDE_DIR}
+${CJSON_INCLUDE_DIR}
 )
 
 # 生成库文件
@@ -79,5 +88,5 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 # 添加可执行文件
 #-------------------------------------------------------------------------#
 add_executable(${PROJECT_NAME} main.cpp VideoTimingCalculator.cpp)
-target_link_libraries(${PROJECT_NAME} fmt::fmt)
+target_link_libraries(${PROJECT_NAME} ${CJSON_LIBRARIES} fmt::fmt)
 #-------------------------------------------------------------------------#

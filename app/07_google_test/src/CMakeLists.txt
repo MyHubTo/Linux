@@ -30,11 +30,14 @@ if(ANDROID)
     list(APPEND LINK_LIBS android log)
 endif()
 
-find_package(fmt REQUIRED)
+find_package(fmt CONFIG REQUIRED)
 if(NOT fmt_FOUND)
    message("fmt not found\n")
 elseif(fmt_FOUND)
    message("fmt found successful\n")
+   include_directories(
+    ${fmt_INCLUDE_DIR}
+   )
 endif()
 
 if(DEMO_FMT)
@@ -43,6 +46,21 @@ if(DEMO_FMT)
 endif()
 
 include_directories(${LIB_INC_DIR} ${USER_INC})
-add_library(${LIBRARY_NAME} SHARED ${SOURCES} ${HEADERS})
-target_link_libraries(${LIBRARY_NAME} ${LINK_LIBS})
 
+add_library(${LIBRARY_NAME} STATIC ${SOURCES} ${HEADERS})
+target_link_libraries(${LIBRARY_NAME} PUBLIC ${LINK_LIBS})
+
+add_executable(${PROJECT_NAME}_main ${SOURCES} ${HEADERS} main.cpp)
+target_link_libraries(${PROJECT_NAME}_main PUBLIC ${LINK_LIBS})
+
+## set_property示例
+set_property(TARGET ${PROJECT_NAME}_main
+    PROPERTY
+    POSITION_INDEPENDENT_CODE ON
+)
+
+## set_target_properties
+set_target_properties (${LIBRARY_NAME}
+    PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+)

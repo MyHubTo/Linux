@@ -31,7 +31,7 @@ void VideoTimingCaculator::calculateCvt(uint32_t horiz_pixels, uint32_t vert_pix
                                         bool margins, bool interlaced, bool video_optimized){
     std::string H_POL="?";
     std::string V_POL="?";
-    int REFRESH_MULTIPLIER=0;
+    double REFRESH_MULTIPLIER=0;
     int INT_RQD=0;
     if(reduced_blanking=="cvt"){
         CLOCK_STEP          =0.25;
@@ -60,7 +60,7 @@ void VideoTimingCaculator::calculateCvt(uint32_t horiz_pixels, uint32_t vert_pix
         RB_H_SYNC           = 32;
         RB_MIN_V_BLANK      = 460;
         RB_V_FPORCH         = 1;
-        REFRESH_MULTIPLIER  = video_optimized ? 1000/1001 : 1;
+        REFRESH_MULTIPLIER  = video_optimized ? ((1000*1.0)/1001) : 1;
         H_POL               = "+";
         V_POL               = "-";
     }else if (reduced_blanking == "cea"){

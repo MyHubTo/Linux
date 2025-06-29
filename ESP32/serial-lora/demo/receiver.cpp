@@ -87,15 +87,21 @@ struct Message{
 	char data[MAX_BUFFER_SIZE];
 };
 
-// 串口配置结构
+
+/**
+ * 串口配置
+ * VTIME：等待超时时间
+ * VMIN：最小读取字符数，只有设置为阻塞时这两个参数才有效，仅针对于读操作
+*/
 struct SerialConfig {
-    int baudrate = B9600;         // 波特率，默认9600
-    DataBits data_bits = DataBits::EIGHT; // 数据位，默认8位
-    StopBits stop_bits = StopBits::ONE;   // 停止位，默认1位
-    Parity parity = Parity::NONE;         // 校验位，默认无校验
-    int vtime = 10;   // 超时时间(十分之一秒)
-    int vmin = 0;     // 最小读取字符数
+    int baudrate = B9600;                   // 波特率，默认9600
+    DataBits data_bits = DataBits::EIGHT;   // 数据位，默认8位
+    StopBits stop_bits = StopBits::ONE;     // 停止位，默认1位
+    Parity parity = Parity::NONE;           // 校验位，默认无校验
+    int vtime = 10;                         // 超时时间(十分之一秒)
+    int vmin = 0;                           // 最小读取字符数
 };
+
 
 // 作用域锁(RAII实现)
 class ScopedLock {
